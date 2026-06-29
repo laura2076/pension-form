@@ -470,18 +470,24 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  fetch(GAS_URL + '?action=config&id=' + ITEM_ID)
-    .then(function(res) { return res.json(); })
-    .then(function(parsed) {
-      PENSION_NAME = parsed.name;
-      CONFIGS      = parsed.configs;
-      TOTAL        = CONFIGS.length;
-      document.getElementById('pensionName').textContent = PENSION_NAME;
-      render();
-    })
-    .catch(function(err) {
-      document.getElementById('questionWrap').innerHTML = '<div class="loading-wrap">⚠️ 데이터 로딩 실패<br>' + err.message + '</div>';
-    });
+  // JSONP로 로드 (CORS 우회)
+  window.onConfigLoaded = function(parsed) {
+    if (parsed.error) {
+      document.getElementById('questionWrap').innerHTML = '<div class="loading-wrap">⚠️ ' + parsed.error + '</div>';
+      return;
+    }
+    PENSION_NAME = parsed.name;
+    CONFIGS      = parsed.configs;
+    TOTAL        = CONFIGS.length;
+    document.getElementById('pensionName').textContent = PENSION_NAME;
+    render();
+  };
+  var s = document.createElement('script');
+  s.onerror = function() {
+    document.getElementById('questionWrap').innerHTML = '<div class="loading-wrap">⚠️ 데이터 로딩 실패. 잠시 후 다시 시도해주세요.</div>';
+  };
+  s.src = GAS_URL + '?action=config&id=' + ITEM_ID + '&callback=onConfigLoaded';
+  document.head.appendChild(s);
 });
 </script>
 </body>
