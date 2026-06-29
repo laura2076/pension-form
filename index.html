@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>파트너 정보 수집</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { font-size: 18px; -webkit-text-size-adjust: 100%; }
+    body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background: #edf2f7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px; }
+
+    .card { width: 100%; max-width: 520px; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+
+    .top { background: linear-gradient(135deg, #2c5282 0%, #2b6cb0 100%); padding: 20px 24px 16px; }
+    .pension-name { color: white; font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+    .pension-sub { color: rgba(255,255,255,0.8); font-size: 14px; }
+
+    .progress-wrap { padding: 14px 20px 0; }
+    .progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .progress-label { font-size: 14px; color: #4a5568; font-weight: 600; }
+    .progress-pct { font-size: 14px; color: #4299e1; font-weight: 700; }
+    .progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #4299e1, #63b3ed); border-radius: 4px; transition: width 0.4s ease; }
+
+    .stat-badge { margin: 12px 20px 0; background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 10px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 8px; }
+    .stat-text { font-size: 13px; color: #2b6cb0; line-height: 1.7; }
+    .stat-text b { color: #1a365d; }
+    .hot-badge { display: inline-block; background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; border-radius: 6px; padding: 1px 7px; font-size: 12px; font-weight: 700; margin-left: 4px; }
+
+    .question-wrap { padding: 20px; min-height: 220px; }
+    .q-label { font-size: 20px; font-weight: 700; color: #1a202c; margin-bottom: 18px; line-height: 1.6; }
+    .btn-group { display: flex; flex-direction: column; gap: 12px; }
+    .opt-btn { display: flex; align-items: center; padding: 18px 20px; border: 2px solid #e2e8f0; border-radius: 14px; background: white; font-size: 18px; font-weight: 500; color: #2d3748; cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; min-height: 62px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+    .opt-btn:active { transform: scale(0.98); }
+    .opt-btn.selected { border-color: #2c5282; background: #2c5282; color: white; }
+    .check-btn { display: flex; align-items: center; padding: 18px 20px; border: 2px solid #e2e8f0; border-radius: 14px; background: white; font-size: 18px; font-weight: 500; color: #2d3748; cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; gap: 12px; min-height: 62px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+    .check-btn:active { transform: scale(0.98); }
+    .check-btn.selected { border-color: #2c5282; background: #ebf8ff; color: #2c5282; }
+    .check-icon { width: 26px; height: 26px; border: 2px solid #cbd5e0; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .check-btn.selected .check-icon { background: #2c5282; border-color: #2c5282; color: white; }
+    .detail-input, .text-input { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 18px; font-family: inherit; margin-top: 12px; color: #1a202c; }
+    .detail-input:focus, .text-input:focus { outline: none; border-color: #4299e1; }
+    .hint-text { font-size: 13px; color: #718096; margin-bottom: 10px; }
+
+    .footer { padding: 0 20px 8px; display: flex; gap: 10px; }
+    .skip-wrap { padding: 0 20px 16px; text-align: center; }
+    .skip-link { background: none; border: none; color: #a0aec0; font-size: 14px; cursor: pointer; text-decoration: underline; padding: 4px 8px; touch-action: manipulation; }
+    .prev-btn { flex: 0 0 auto; padding: 16px 20px; border: 2px solid #e2e8f0; background: white; border-radius: 14px; font-size: 17px; color: #718096; cursor: pointer; touch-action: manipulation; min-height: 62px; }
+    .next-btn { flex: 1; padding: 16px; background: linear-gradient(135deg, #2c5282, #2b6cb0); color: white; border: none; border-radius: 14px; font-size: 19px; font-weight: 700; cursor: pointer; touch-action: manipulation; min-height: 62px; }
+    .next-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    .summary-title { font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 4px; }
+    .summary-sub { font-size: 13px; color: #718096; margin-bottom: 16px; }
+    .summary-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f0f4f8; }
+    .summary-row.unanswered .summary-ans { color: #cbd5e0; font-style: italic; }
+    .summary-left { flex: 1; min-width: 0; }
+    .summary-item { font-size: 13px; color: #718096; margin-bottom: 3px; line-height: 1.4; }
+    .summary-ans { font-size: 15px; font-weight: 600; color: #2d3748; line-height: 1.5; word-break: break-all; }
+    .edit-btn { flex-shrink: 0; padding: 8px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px; background: white; font-size: 13px; color: #4299e1; cursor: pointer; font-weight: 600; touch-action: manipulation; }
+
+    .done-wrap { text-align: center; padding: 56px 24px; }
+    .done-icon { font-size: 64px; margin-bottom: 16px; }
+    .done-title { font-size: 24px; font-weight: 700; color: #1a202c; margin-bottom: 8px; }
+    .done-sub { font-size: 16px; color: #718096; line-height: 1.8; white-space: pre-line; }
+
+    .loading-wrap { text-align: center; padding: 60px 24px; color: #718096; font-size: 16px; }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .card { border-radius: 0; min-height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <div class="pension-name" id="pensionName">불러오는 중...</div>
+    <div class="pension-sub" id="topSub">📋 파트너 정보 확인 요청 · 3분이면 완료돼요!</div>
+  </div>
+  <div id="progressWrap" class="progress-wrap" style="display:none">
+    <div class="progress-info">
+      <span class="progress-label" id="progressText"></span>
+      <span class="progress-pct" id="progressPct"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+  <div class="stat-badge" id="statBadge" style="display:none">
+    <span style="font-size:20px">📊</span>
+    <span class="stat-text" id="statText"></span>
+  </div>
+  <div class="question-wrap" id="questionWrap">
+    <div class="loading-wrap">⏳ 정보를 불러오는 중이에요...</div>
+  </div>
+  <div class="footer" id="mainFooter" style="display:none">
+    <button class="prev-btn" id="prevBtn" style="display:none">← 이전</button>
+    <button class="next-btn" id="nextBtn">다음 →</button>
+  </div>
+  <div class="skip-wrap" id="skipWrap" style="display:none">
+    <button class="skip-link" id="skipBtn">잘 모르겠어요, 넘어갈게요 →</button>
+  </div>
+</div>
+
+<script>
+// ── 설정 ──────────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyh_WR8ScB9FrmIiGvbNOyP2YxAHBvyCmN1rTWaOWylmsy4f_NPNOUfXAXktOf8Nau_Dw/exec';
+const ITEM_ID = new URLSearchParams(window.location.search).get('id') || '';
+
+let PENSION_NAME = '';
+let CONFIGS      = [];
+let TOTAL        = 0;
+let current      = 0;
+let fromSummary  = false;
+let inSummary    = false;
+const answers    = {};
+
+// ── 진행 바 ───────────────────────────────────────────────
+function updateProgress() {
+  var pct = Math.round((current / TOTAL) * 100);
+  document.getElementById('progressText').textContent = (current + 1) + ' / ' + TOTAL;
+  document.getElementById('progressPct').textContent  = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('prevBtn').style.display    = current > 0 ? '' : 'none';
+  document.getElementById('nextBtn').textContent = current === TOTAL - 1 ? '확인 →' : '다음 →';
+}
+
+// ── 통계 뱃지 ─────────────────────────────────────────────
+function updateStat() {
+  var stats = CONFIGS[current].stats;
+  var el = document.getElementById('statText');
+  el.innerHTML = '';
+  var line1 = document.createElement('span');
+  line1.innerHTML = '월 평균 <b>' + stats.q + '건</b> 문의 · 답변하면 예약률 <b>' + stats.boost + '% UP</b>';
+  if (stats.hot) {
+    var badge = document.createElement('span');
+    badge.className = 'hot-badge';
+    badge.textContent = '🔥 성수기 TOP';
+    line1.appendChild(badge);
+  }
+  var line2 = document.createElement('div');
+  line2.style.cssText = 'color:#4a90d9;margin-top:2px;';
+  line2.textContent = '🏘️ 비슷한 펜션 ' + stats.social + '%가 이 정보 제공 중';
+  el.appendChild(line1);
+  el.appendChild(line2);
+}
+
+// ── 위저드 UI 표시 ────────────────────────────────────────
+function showWizardUI() {
+  document.getElementById('progressWrap').style.display = '';
+  document.getElementById('statBadge').style.display    = '';
+  document.getElementById('mainFooter').style.display   = '';
+  document.getElementById('skipWrap').style.display     = '';
+  inSummary = false;
+}
+
+// ── 렌더 ──────────────────────────────────────────────────
+function render() {
+  showWizardUI();
+  var wrap  = document.getElementById('questionWrap');
+  var item  = CONFIGS[current].item;
+  var cfg   = CONFIGS[current].cfg;
+  var key   = 'item_' + encodeURIComponent(item);
+  var saved = answers[key] || {};
+
+  wrap.innerHTML = '';
+
+  var label = document.createElement('div');
+  label.className   = 'q-label';
+  label.textContent = (current + 1) + '. ' + item;
+  wrap.appendChild(label);
+
+  if (cfg.type === 'radio' || cfg.type === 'radio_detail') {
+    var group = document.createElement('div');
+    group.className = 'btn-group';
+    (cfg.options || []).forEach(function(opt) {
+      var btn = document.createElement('button');
+      btn.type      = 'button';
+      btn.className = 'opt-btn' + (saved.value === opt ? ' selected' : '');
+      btn.textContent = opt;
+      btn.addEventListener('click', function() {
+        wrap.querySelectorAll('.opt-btn').forEach(function(b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        if (cfg.conditionalDetail) {
+          var condInp = wrap.querySelector('.cond-detail-input');
+          var w = cfg.conditionalDetail.when;
+          var matches = Array.isArray(w) ? w.includes(opt) : opt === w;
+          if (matches) {
+            if (condInp) { condInp.style.display = ''; condInp.focus(); }
+            answers[key] = { value: opt, detail: condInp ? condInp.value : '' };
+          } else {
+            if (condInp) { condInp.style.display = 'none'; condInp.value = ''; }
+            answers[key] = { value: opt, detail: '' };
+            setTimeout(next, 300);
+          }
+          return;
+        }
+        var det = wrap.querySelector('.detail-input');
+        answers[key] = { value: opt, detail: det ? det.value : '' };
+        if (cfg.type === 'radio') setTimeout(next, 300);
+      });
+      group.appendChild(btn);
+    });
+    wrap.appendChild(group);
+
+    if (cfg.conditionalDetail) {
+      var condInp = document.createElement('input');
+      condInp.type        = 'text';
+      condInp.className   = 'detail-input cond-detail-input';
+      condInp.placeholder = cfg.conditionalDetail.placeholder;
+      condInp.value       = saved.detail || '';
+      var _w = cfg.conditionalDetail.when;
+      condInp.style.display = (Array.isArray(_w) ? _w.includes(saved.value) : saved.value === _w) ? '' : 'none';
+      condInp.addEventListener('input', function() {
+        var sel = wrap.querySelector('.opt-btn.selected');
+        if (sel) answers[key] = { value: sel.textContent, detail: condInp.value };
+      });
+      wrap.appendChild(condInp);
+    }
+    if (cfg.type === 'radio_detail') {
+      var inp = document.createElement('input');
+      inp.type        = 'text';
+      inp.className   = 'detail-input';
+      inp.placeholder = cfg.detail || '';
+      inp.value       = saved.detail || '';
+      inp.addEventListener('input', function() {
+        var sel = wrap.querySelector('.opt-btn.selected');
+        if (sel) answers[key] = { value: sel.textContent, detail: inp.value };
+      });
+      wrap.appendChild(inp);
+    }
+
+  } else if (cfg.type === 'checkbox') {
+    var hint = document.createElement('div');
+    hint.className   = 'hint-text';
+    hint.textContent = '✅ 해당하는 항목 모두 선택해주세요';
+    wrap.appendChild(hint);
+    var cbGroup = document.createElement('div');
+    cbGroup.className = 'btn-group';
+    var checked = saved.values || [];
+    (cfg.options || []).forEach(function(opt) {
+      var btn  = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'check-btn' + (checked.includes(opt) ? ' selected' : '');
+      var icon = document.createElement('div');
+      icon.className   = 'check-icon';
+      icon.textContent = checked.includes(opt) ? '✓' : '';
+      btn.appendChild(icon);
+      var span = document.createElement('span');
+      span.textContent = opt;
+      btn.appendChild(span);
+      btn.addEventListener('click', function() {
+        btn.classList.toggle('selected');
+        icon.textContent = btn.classList.contains('selected') ? '✓' : '';
+        var vals = Array.from(wrap.querySelectorAll('.check-btn.selected span')).map(function(s) { return s.textContent; });
+        var ex   = wrap.querySelector('#extraInput');
+        answers[key] = { values: vals, extra: ex ? ex.value : '' };
+      });
+      cbGroup.appendChild(btn);
+    });
+    wrap.appendChild(cbGroup);
+    if (cfg.extra) {
+      var exInp = document.createElement('input');
+      exInp.type        = 'text';
+      exInp.id          = 'extraInput';
+      exInp.className   = 'detail-input';
+      exInp.placeholder = cfg.extra;
+      exInp.value       = saved.extra || '';
+      exInp.addEventListener('input', function() {
+        var vals = Array.from(wrap.querySelectorAll('.check-btn.selected span')).map(function(s) { return s.textContent; });
+        answers[key] = { values: vals, extra: exInp.value };
+      });
+      wrap.appendChild(exInp);
+    }
+
+  } else {
+    var txInp = document.createElement('input');
+    txInp.type        = 'text';
+    txInp.className   = 'text-input';
+    txInp.placeholder = cfg.placeholder || '';
+    txInp.value       = saved.value || '';
+    txInp.addEventListener('input', function() {
+      answers[key] = { value: txInp.value };
+    });
+    wrap.appendChild(txInp);
+  }
+
+  updateProgress();
+  updateStat();
+}
+
+// ── 현재 답변 저장 ────────────────────────────────────────
+function saveCurrentAnswer() {
+  if (inSummary) return;
+  var wrap = document.getElementById('questionWrap');
+  var item = CONFIGS[current].item;
+  var cfg  = CONFIGS[current].cfg;
+  var key  = 'item_' + encodeURIComponent(item);
+  if (cfg.type === 'radio' || cfg.type === 'radio_detail') {
+    var sel  = wrap.querySelector('.opt-btn.selected');
+    var cond = wrap.querySelector('.cond-detail-input');
+    var det  = cond && cond.style.display !== 'none' ? cond : wrap.querySelector('.detail-input');
+    if (sel) answers[key] = { value: sel.textContent, detail: det ? det.value : '' };
+  } else if (cfg.type === 'checkbox') {
+    var vals = Array.from(wrap.querySelectorAll('.check-btn.selected span')).map(function(s) { return s.textContent; });
+    var ex   = wrap.querySelector('#extraInput');
+    answers[key] = { values: vals, extra: ex ? ex.value : '' };
+  } else {
+    var inp = wrap.querySelector('.text-input');
+    if (inp) answers[key] = { value: inp.value };
+  }
+}
+
+// ── 요약 화면 ─────────────────────────────────────────────
+function showSummary() {
+  inSummary = true;
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('statBadge').style.display    = 'none';
+  document.getElementById('skipWrap').style.display     = 'none';
+  document.getElementById('prevBtn').style.display      = 'none';
+  document.getElementById('nextBtn').textContent        = '✓ 제출하기';
+  document.getElementById('topSub').textContent         = '📋 제출 전 내용을 확인해주세요';
+
+  var wrap = document.getElementById('questionWrap');
+  wrap.innerHTML = '';
+
+  var titleEl = document.createElement('div');
+  titleEl.className   = 'summary-title';
+  titleEl.textContent = '이렇게 답변하셨어요';
+  wrap.appendChild(titleEl);
+
+  var subEl = document.createElement('div');
+  subEl.className   = 'summary-sub';
+  subEl.textContent = '수정이 필요하면 항목 옆 수정 버튼을 눌러주세요';
+  wrap.appendChild(subEl);
+
+  CONFIGS.forEach(function(cfgItem, idx) {
+    var item = cfgItem.item;
+    var cfg  = cfgItem.cfg;
+    var key  = 'item_' + encodeURIComponent(item);
+    var ans  = answers[key];
+    var ansText = '(미입력)';
+    if (ans) {
+      if (cfg.type === 'radio' || cfg.type === 'radio_detail') {
+        if (ans.value) ansText = ans.detail ? ans.value + ' / ' + ans.detail : ans.value;
+      } else if (cfg.type === 'checkbox') {
+        var joined = (ans.values || []).join(', ');
+        if (joined) ansText = ans.extra ? joined + ', ' + ans.extra : joined;
+      } else {
+        if (ans.value && ans.value.trim()) ansText = ans.value.trim();
+      }
+    }
+    var row = document.createElement('div');
+    row.className = 'summary-row' + (ansText === '(미입력)' ? ' unanswered' : '');
+    var left = document.createElement('div');
+    left.className = 'summary-left';
+    var itemEl = document.createElement('div');
+    itemEl.className   = 'summary-item';
+    itemEl.textContent = (idx + 1) + '. ' + item;
+    var ansEl = document.createElement('div');
+    ansEl.className   = 'summary-ans';
+    ansEl.textContent = ansText;
+    left.appendChild(itemEl);
+    left.appendChild(ansEl);
+    var editBtn = document.createElement('button');
+    editBtn.className   = 'edit-btn';
+    editBtn.textContent = '수정';
+    editBtn.addEventListener('click', (function(i) {
+      return function() {
+        fromSummary = true;
+        current     = i;
+        document.getElementById('topSub').textContent = '📋 파트너 정보 확인 요청 · 3분이면 완료돼요!';
+        render();
+        window.scrollTo(0, 0);
+      };
+    })(idx));
+    row.appendChild(left);
+    row.appendChild(editBtn);
+    wrap.appendChild(row);
+  });
+}
+
+// ── 네비게이션 ────────────────────────────────────────────
+function next() {
+  if (inSummary) { doSubmit(); return; }
+  saveCurrentAnswer();
+  if (fromSummary) { fromSummary = false; showSummary(); window.scrollTo(0,0); return; }
+  if (current < TOTAL - 1) { current++; render(); window.scrollTo(0,0); }
+  else { showSummary(); window.scrollTo(0,0); }
+}
+
+function skip() {
+  if (fromSummary) { fromSummary = false; showSummary(); window.scrollTo(0,0); return; }
+  if (current < TOTAL - 1) { current++; render(); window.scrollTo(0,0); }
+  else { showSummary(); window.scrollTo(0,0); }
+}
+
+function prev() {
+  if (inSummary) {
+    inSummary   = false;
+    fromSummary = false;
+    document.getElementById('topSub').textContent = '📋 파트너 정보 확인 요청 · 3분이면 완료돼요!';
+    current = TOTAL - 1;
+    render();
+    window.scrollTo(0, 0);
+    return;
+  }
+  saveCurrentAnswer();
+  if (current > 0) { current--; render(); window.scrollTo(0, 0); }
+}
+
+// ── 제출 ──────────────────────────────────────────────────
+function doSubmit() {
+  var btn = document.getElementById('nextBtn');
+  btn.textContent = '제출 중...';
+  btn.disabled    = true;
+
+  var params = new URLSearchParams();
+  params.append('item_id',      ITEM_ID);
+  params.append('pension_name', PENSION_NAME);
+
+  CONFIGS.forEach(function(cfgItem) {
+    var item = cfgItem.item;
+    var cfg  = cfgItem.cfg;
+    var key  = 'item_' + encodeURIComponent(item);
+    var ans  = answers[key];
+    if (!ans) return;
+    if (cfg.type === 'radio' || cfg.type === 'radio_detail') {
+      if (ans.value) params.append(key, ans.detail ? ans.value + ' / ' + ans.detail : ans.value);
+    } else if (cfg.type === 'checkbox') {
+      if (ans.values && ans.values.length) params.append(key, ans.extra ? ans.values.join(', ') + ', ' + ans.extra : ans.values.join(', '));
+    } else {
+      if (ans.value && ans.value.trim()) params.append(key, ans.value.trim());
+    }
+  });
+
+  fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  }).then(function() {
+    var card = document.querySelector('.card');
+    while (card.firstChild) card.removeChild(card.firstChild);
+    var doneWrap = document.createElement('div');
+    doneWrap.className = 'done-wrap';
+    [
+      { cls: 'done-icon',  text: '🎊' },
+      { cls: 'done-title', text: '완료! 정말 감사해요!' },
+      { cls: 'done-sub',   text: '사장님 덕분에 고객들이 더 빠르게\n예약 결정을 내릴 수 있게 됐어요.\n\n불필요한 전화 문의가 줄어들\n거예요! 😊' },
+    ].forEach(function(d) {
+      var el = document.createElement('div');
+      el.className   = d.cls;
+      el.textContent = d.text;
+      doneWrap.appendChild(el);
+    });
+    card.appendChild(doneWrap);
+  }).catch(function() {
+    btn.textContent = '✓ 제출하기';
+    btn.disabled    = false;
+    alert('오류가 발생했습니다. 다시 시도해주세요.');
+  });
+}
+
+// ── 초기화 ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('prevBtn').addEventListener('click', prev);
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('skipBtn').addEventListener('click', skip);
+
+  if (!ITEM_ID) {
+    document.getElementById('questionWrap').innerHTML = '<div class="loading-wrap">⚠️ 잘못된 링크예요.<br>올바른 링크로 다시 접속해주세요.</div>';
+    return;
+  }
+
+  fetch(GAS_URL + '?action=config&id=' + ITEM_ID)
+    .then(function(res) { return res.json(); })
+    .then(function(parsed) {
+      PENSION_NAME = parsed.name;
+      CONFIGS      = parsed.configs;
+      TOTAL        = CONFIGS.length;
+      document.getElementById('pensionName').textContent = PENSION_NAME;
+      render();
+    })
+    .catch(function(err) {
+      document.getElementById('questionWrap').innerHTML = '<div class="loading-wrap">⚠️ 데이터 로딩 실패<br>' + err.message + '</div>';
+    });
+});
+</script>
+</body>
+</html>
